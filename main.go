@@ -19,6 +19,8 @@ import (
 
 const defaultSize uint64 = 1 << 10
 
+var passCmd []string
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "passfuse mounts a passwordstore secret into a file.\n")
 	fmt.Fprintf(os.Stderr, "  github.com/pierreprinetti/passfuse\n")
@@ -35,7 +37,11 @@ func usage() {
 func main() {
 	flag.Usage = usage
 	layout := flag.String("layout", "%p", "Layout specifier. %p for password, %o for otp")
+	passCmdStr := flag.String("pass-cmd", "pass", "Pass command")
 	flag.Parse()
+
+	// TODO: properly split respecting quotes
+	passCmd = strings.Split(*passCmdStr, " ")
 
 	if flag.NArg() != 2 {
 		usage()
@@ -92,7 +98,8 @@ func getPassword(ctx context.Context, name string) (*bytes.Buffer, error) {
 	outBuffer := new(bytes.Buffer)
 	errBuffer := new(bytes.Buffer)
 
-	cmd := exec.CommandContext(ctx, "pass", "show", name)
+	commands := append(passCmd, "show", name)
+	cmd := exec.CommandContext(ctx, commands[0], commands[1:]...)
 	cmd.Stdout = FirstLineWriter(outBuffer)
 	cmd.Stderr = errBuffer
 
@@ -108,7 +115,8 @@ func getOTP(ctx context.Context, name string) (*bytes.Buffer, error) {
 	outBuffer := new(bytes.Buffer)
 	errBuffer := new(bytes.Buffer)
 
-	cmd := exec.CommandContext(ctx, "pass", "otp", "show", name)
+	commands := append(passCmd, "otp", "show", name)
+	cmd := exec.CommandContext(ctx, commands[0], commands[1:]...)
 	cmd.Stdout = FirstLineWriter(outBuffer)
 	cmd.Stderr = errBuffer
 
@@ -134,10 +142,12 @@ func (f File) ReadAll(ctx context.Context) ([]byte, error) {
 	if strings.Index(f.layout, "%p") >= 0 {
 		p, err := getPassword(ctx, f.passName)
 		if err != nil {
+			log.Print(err)
 			return nil, err
 		}
 		b, err := io.ReadAll(p)
 		if err != nil {
+			log.Print(err)
 			return nil, err
 		}
 		password = string(b)
@@ -146,10 +156,12 @@ func (f File) ReadAll(ctx context.Context) ([]byte, error) {
 	if strings.Index(f.layout, "%o") >= 0 {
 		o, err := getOTP(ctx, f.passName)
 		if err != nil {
+			log.Print(err)
 			return nil, err
 		}
 		b, err := io.ReadAll(o)
 		if err != nil {
+			log.Print(err)
 			return nil, err
 		}
 		otp = string(b)
