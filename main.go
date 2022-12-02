@@ -20,9 +20,16 @@ import (
 const defaultSize uint64 = 1 << 10
 
 func usage() {
+	fmt.Fprintf(os.Stderr, "passfuse mounts a passwordstore secret into a file.\n")
+	fmt.Fprintf(os.Stderr, "  github.com/pierreprinetti/passfuse\n")
+	fmt.Fprintln(os.Stderr)
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s MOUNTPOINT pass-name\n", os.Args[0])
 	flag.PrintDefaults()
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintf(os.Stderr, "Requirements:\n")
+	fmt.Fprintf(os.Stderr, "  * pass\n")
+	fmt.Fprintf(os.Stderr, "  * pass-otp\n")
 }
 
 func main() {
