@@ -2,6 +2,8 @@
 
 passfuse mounts a passwordstore secret into a file.
 
+The content of the file is dynamically generated each time the file is read.
+
 ```plaintext
 Usage of ./passfuse:
   ./passfuse MOUNTPOINT pass-name
